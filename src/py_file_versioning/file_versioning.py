@@ -17,7 +17,7 @@ class VersionError(Exception):
 
 class CompressionType(Enum):
     NONE = "none"
-    GZIP = "gzip"
+    GZIP = "gz"
     BZ2 = "bz2"
     XZ = "xz"
 
@@ -162,7 +162,7 @@ class FileVersioning:
     """A class for managing file versioning with configurable timestamps, compression, and cleanup.
 
     This class provides functionality to create, restore, and manage versioned copies of files
-    with support for different compression methods (gzip, bz2, xz), timestamp formats,
+    with support for different compression methods (gz, bz2, xz), timestamp formats,
     and automatic cleanup of old versions. Each version is stored with a timestamp
     and sequence number to maintain unique identifiers.
 
@@ -174,9 +174,9 @@ class FileVersioning:
     """
 
     MAX_SEQUENCE = 999
-    LIB_NAME = "pyfileversioning"
+    LIB_NAME = ""
     LIB_VERSION = ""
-    LIB_URL = "https://github.com/jftuga/py_file_versioning"
+    LIB_URL = ""
 
     def __init__(self, config: FileVersioningConfig = None):
         """Initialize the FileVersioning instance with the given configuration.
@@ -314,14 +314,14 @@ class FileVersioning:
             dest_path: Path where the compressed file should be saved.
         """
         compression_handlers = {
-            CompressionType.GZIP: gzip.open,
-            CompressionType.BZ2: bz2.open,
-            CompressionType.XZ: lzma.open,
+            CompressionType.GZIP: lambda path: gzip.open(path, "wb", compresslevel=9),
+            CompressionType.BZ2: lambda path: bz2.open(path, "wb", compresslevel=9),
+            CompressionType.XZ: lambda path: lzma.open(path, "wb", preset=9),
         }
 
         if self.config.compression in compression_handlers:
             with source_path.open("rb") as f_in:
-                with compression_handlers[self.config.compression](str(dest_path), "wb") as f_out:
+                with compression_handlers[self.config.compression](str(dest_path)) as f_out:
                     shutil.copyfileobj(f_in, f_out)
         else:
             shutil.copy2(str(source_path), str(dest_path))

@@ -54,7 +54,7 @@ Repository = "https://github.com/jftuga/py-file-versioning.git"
 Issues = "https://github.com/jftuga/py-file-versioning/issues"
 
 [project.scripts]
-pyfileversioning = "py_file_versioning.cli:main"
+pyfileversioning = "py_file_versioning.pyfileversioning:main"
 
 [tool.hatch.version]
 path = "src/py_file_versioning/__init__.py"

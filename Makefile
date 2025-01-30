@@ -55,7 +55,7 @@ clean:
 	rm -rf test-install-venv/ local-install-venv/ prod-install-venv
 	rm -rf venv/ .venv/
 	rm -f *.whl.metadata .??*~
-	rm -rf .pytest_cache/ .ruff_cache/
+	rm -rf .coverage .pytest_cache/ .ruff_cache/
 	find . -type d -name "__pycache__" -exec rm -r "{}" +
 	find . -type f -name "*.pyc" -delete
 	command pip cache purge
