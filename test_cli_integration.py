@@ -45,7 +45,7 @@ def main():
         print(f"Original hash: {original_hash}")
 
         # Test different compression types
-        compression_types = ["none", "gzip", "bz2", "xz"]
+        compression_types = ["none", "gz", "bz2", "xz"]
         for compression in compression_types:
             print(f"\nTesting {compression} compression:")
             print("-" * 30)

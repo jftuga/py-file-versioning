@@ -58,7 +58,7 @@ def main(args=None):
     parser.add_argument(
         "-c",
         "--compression",
-        choices=["none", "gzip", "bz2", "xz"],
+        choices=["none", "gz", "bz2", "xz"],
         default="none",
         help="Compression type to use",
     )

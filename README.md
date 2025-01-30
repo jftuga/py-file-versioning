@@ -58,7 +58,10 @@ pip install .
 For development installation:
 
 ```bash
-pip install -e '.[dev]'
+uv venv
+source .venv/bin/activate
+uv pip install -e '.[dev]'
+uv pip list
 ```
 
 ### Command Line Usage
@@ -72,7 +75,7 @@ pyfileversioning create myfile.txt
 
 Create a compressed version:
 ```bash
-pyfileversioning create myfile.txt -c gzip  # or --compression gzip
+pyfileversioning create myfile.txt -c gz  # or --compression gz
 ```
 
 List all versions:
@@ -109,7 +112,7 @@ Created version: backups/config--20240120.143022_001.ini
 $ echo "database_port=5432" >> config.ini
 
 # Create compressed version
-$ pyfileversioning create config.ini -d backups -c gzip  # Using short options
+$ pyfileversioning create config.ini -d backups -c gz  # Using short options
 Created version: backups/config--20240120.143156_001.ini.gz
 
 # List all versions
@@ -122,7 +125,7 @@ config--20240120.143022_001.ini              187 bytes  2024-01-20 14:30:22
 # Add more content and create another version
 $ echo "database_name=myapp" >> config.ini
 
-$ pyfileversioning create config.ini --versions-dir backups --compression gzip
+$ pyfileversioning create config.ini --versions-dir backups --compression gz
 Created version: backups/config--20240120.143312_001.ini.gz
 
 # View all versions with size and timestamp
@@ -142,7 +145,7 @@ $ cat config.ini.restored
 database_host=localhost
 
 # Clean up old versions (only keep the last 2)
-$ pyfileversioning create config.ini -d backups -c gzip -m 2  # Using short options
+$ pyfileversioning create config.ini -d backups -c gz -m 2  # Using short options
 Created version: backups/config--20240120.143428_001.ini.gz
 
 # Check that only 2 versions remain
@@ -199,7 +202,7 @@ version_path = versioning.create_version(TEST_FILE)
 
 ```
 usage: pyfileversioning [-h] [-V] [-t TARGET] [-d VERSIONS_DIR]
-                [-c {none,gzip,bz2,xz}] [-m MAX_VERSIONS]
+                [-c {none,gz,bz2,xz}] [-m MAX_VERSIONS]
                 [--timestamp-source {modified,now}]
                 {create,restore,list,remove} file
 ```
@@ -208,7 +211,7 @@ Options:
 * `-V, --version`: Show version information
 * `-t, --target`: Target path for restore
 * `-d, --versions-dir`: Directory to store versions (default: versions)
-* `-c, --compression`: Compression type to use (choices: none, gzip, bz2, xz)
+* `-c, --compression`: Compression type to use (choices: none, gz, bz2, xz)
 * `-m, --max-versions`: Maximum number of versions to keep
 * `--timestamp-source`: Source for timestamps (choices: modified, now)
 

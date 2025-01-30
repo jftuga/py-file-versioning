@@ -36,8 +36,12 @@ def sample_file(temp_dir):
 
 @pytest.fixture
 def unicode_file(temp_dir):
-    """Create a sample file with Unicode name for testing."""
-    file_path = temp_dir / "????.txt"
+    """Create a sample file with Unicode name for testing.
+    This will render to tést_filê.txt.
+    * \u00e9 = é (lowercase e with acute accent)
+    * \u00ea = ê (lowercase e with circumflex)
+    """
+    file_path = temp_dir / "t\u00e9st_fil\u00ea.txt"
     with file_path.open("w") as f:
         f.write("Unicode test content")
     yield file_path
@@ -400,7 +404,7 @@ def test_list_versions(temp_dir, sample_file):
             "delimiter": "--",
             "expected": {"original_name": "test", "compression": CompressionType.NONE, "sequence": 1},
         },
-        # Test gzip compression
+        # Test gz compression
         {
             "filename": "test--20240101.120000_002.txt.gz",
             "delimiter": "--",
