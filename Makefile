@@ -36,11 +36,11 @@ $(VENV_NAME):
 
 # Check source code for minor issues
 srcchecks:
-	black src/
-	isort src/
-	flake8 src/
-	ruff check src/
-	python -m compileall src/
+	black src/ tests/ *py
+	isort src/ tests/ *py
+	flake8 src/ tests/ *py
+	ruff check src/ tests/ *py
+	python -m compileall src/ tests/ *py
 
 # Build distribution
 build: $(VENV_NAME)
@@ -49,11 +49,10 @@ build: $(VENV_NAME)
 # Clean build artifacts and virtual environment
 clean:
 	rm -rf build/ dist/
-	rm -rf uv.lock
 	rm -rf *.egg-info/
 	rm -rf $(VENV_NAME)/
 	rm -rf test-install-venv/ local-install-venv/ prod-install-venv
-	rm -rf venv/ .venv/
+	rm -rf venv/
 	rm -f *.whl.metadata .??*~
 	rm -rf .coverage .pytest_cache/ .ruff_cache/
 	find . -type d -name "__pycache__" -exec rm -r "{}" +
@@ -69,7 +68,7 @@ local-install: clean check-pypirc $(VENV_NAME) build
 	@echo "Now run:    source ./local-install-venv/bin/activate"
 
 # Test PyPI targets
-test-publish: clean check-pypirc $(VENV_NAME) build
+test-publish: clean check-pypirc $(VENV_NAME) build testing
 	./$(VENV_NAME)/bin/twine upload --verbose --repository testpypi dist/*
 
 test-install: clean
@@ -79,7 +78,7 @@ test-install: clean
 	@echo "Now run:    source ./test-install-venv/bin/activate"
 
 # Production PyPI targets
-prod-publish: clean check-pypirc $(VENV_NAME) build
+prod-publish: clean check-pypirc $(VENV_NAME) build testing
 	@echo "Are you sure you want to publish to production PyPI? [y/N] " && read ans && [ $${ans:-N} = y ]
 	./$(VENV_NAME)/bin/twine upload --verbose dist/*
 
@@ -89,5 +88,21 @@ prod-install: clean
 	@echo ""
 	@echo "Now run:    source ./prod-install-venv/bin/activate"
 
+testing: check-pypirc $(VENV_NAME) build
+	@echo
+	@echo You may need to run: unset PFV_VERSIONS_PATH PFV_COMPRESSION PFV_DELIMITER
+	@echo
+	sleep 1
+	pytest -q tests/
+
+testing-coverage: check-pypirc $(VENV_NAME) build
+	pytest tests/test_internal.py --cov=py_file_versioning._internal
+	pytest tests/test_versioning.py --cov=py_file_versioning.versioning
+	pytest tests/test_pyfileversioning.py --cov=py_file_versioning.pyfileversioning
+
+testing-report: check-pypirc $(VENV_NAME) build
+	pytest tests/ --cov=py_file_versioning --cov-report=html
+
+
 # Declare targets that don't create a file of the same name
-.PHONY: show-make-targets show-project-name check-pypirc srcchecks build clean local-install test-publish test-install prod-publish prod-install
+.PHONY: show-make-targets show-project-name check-pypirc srcchecks build clean local-install test-publish test-install prod-publish prod-install testing testing-coverage testing-report

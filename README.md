@@ -85,16 +85,15 @@ List all versions:
 pyfileversioning list myfile.txt
 ```
 
-Restore a specific version:
+Restore a specific version to a new file path:
 ```bash
-pyfileversioning restore versions/myfile--20240120.123456_001.txt.gz --target restored_file.txt
+pyfileversioning restore versions/myfile--20240120.123456_001.txt.gz --target /path/to/restored_file.txt
 ```
 
 Remove a version:
 ```bash
 pyfileversioning remove versions/myfile--20240120.123456_001.txt.gz
 ```
-
 
 ### Demo Shell Session
 
@@ -107,115 +106,121 @@ $ cat config.ini
 database_host=localhost
 
 # Create first version (uncompressed)
-$ pyfileversioning create config.ini -d backups  # or --versions-dir backups
-Created version: backups/config--20240120.143022_001.ini
+$ pyfileversioning create config.ini -d backups
+Created version: backups/config--20250207.044841_001--loc_mod.ini
 
 # Update the file content
 $ echo "database_port=5432" >> config.ini
 
 # Create compressed version
-$ pyfileversioning create config.ini -d backups -c gz  # Using short options
-Created version: backups/config--20240120.143156_001.ini.gz
+$ pyfileversioning create config.ini -d backups -c gz
+Created version: backups/config--20250207.044924_001--loc_mod.ini.gz
 
 # List all versions
 $ pyfileversioning list config.ini -d backups
-Versions for config.ini:
-------------------------------------------------------------
-config--20240120.143156_001.ini.gz           285 bytes  2024-01-20 14:31:56
-config--20240120.143022_001.ini              187 bytes  2024-01-20 14:30:22
+Path                                        | Sequence | Size | Timestamp           | TimeZone | TimestampSrc
+====                                        | ======== | ==== | =========           | ======== | ============
+config--20250207.044924_001--loc_mod.ini.gz |        1 |   95 | 2025-02-07T04:49:24 |    local |  modify time
+config--20250207.044841_001--loc_mod.ini    |        1 |   24 | 2025-02-07T04:48:41 |    local |  modify time
 
-# Add more content and create another version
+# Add more content and create another version with UTC time
 $ echo "database_name=myapp" >> config.ini
+$ pyfileversioning create config.ini -d backups -c gz -u
+Created version: backups/config--20250207.095009_001--utc_mod.ini.gz
 
-$ pyfileversioning create config.ini --versions-dir backups --compression gz
-Created version: backups/config--20240120.143312_001.ini.gz
-
-# View all versions with size and timestamp
-$ pyfileversioning list config.ini --versions-dir backups
-Versions for config.ini:
-------------------------------------------------------------
-config--20240120.143312_001.ini.gz           324 bytes  2024-01-20 14:33:12
-config--20240120.143156_001.ini.gz           285 bytes  2024-01-20 14:31:56
-config--20240120.143022_001.ini              187 bytes  2024-01-20 14:30:22
-
-# Restore the first version
-$ pyfileversioning restore backups/config--20240120.143022_001.ini --target config.ini.restored
-Restored backups/config--20240120.143022_001.ini to config.ini.restored
-
-# Verify the restored content
-$ cat config.ini.restored
-database_host=localhost
-
-# Clean up old versions (only keep the last 2)
-$ pyfileversioning create config.ini -d backups -c gz -m 2  # Using short options
-Created version: backups/config--20240120.143428_001.ini.gz
-
-# Check that only 2 versions remain
-$ pyfileversioning list config.ini --versions-dir backups
-Versions for config.ini:
-------------------------------------------------------------
-config--20240120.143428_001.ini.gz           324 bytes  2024-01-20 14:34:28
-config--20240120.143312_001.ini.gz           324 bytes  2024-01-20 14:33:12
+# View all versions with size and timestamp (note: mixed timezone versions not recommended)
+$ pyfileversioning list config.ini -d backups
+Path                                        | Sequence | Size | Timestamp           | TimeZone | TimestampSrc
+====                                        | ======== | ==== | =========           | ======== | ============
+config--20250207.095009_001--utc_mod.ini.gz |        1 |  107 | 2025-02-07T09:50:09 |      utc |  modify time
+config--20250207.044924_001--loc_mod.ini.gz |        1 |   95 | 2025-02-07T04:49:24 |    local |  modify time
+config--20250207.044841_001--loc_mod.ini    |        1 |   24 | 2025-02-07T04:48:41 |    local |  modify time
 ```
-
 
 ### Python API Usage
 
-See [create-demo.py](create-demo.py) for a more detailed example.
+The library provides a flexible API for file versioning. Here's how to use it:
 
 ```python
-import os
-from py_file_versioning import FileVersioning, FileVersioningConfig, CompressionType
+from py_file_versioning import FileVersioning, FileVersioningConfig
 
 # Create a test file
-TEST_FILE="test_file.txt"
-if not os.path.exists(TEST_FILE):
-    with open(TEST_FILE, mode="w") as fp:
-        fp.write("this is a test file\n")
+def create_example_file(filename: str) -> None:
+    content = """
+    # Database configuration settings
+    db_host = db.example.com
+    db_port = 5432
+    db_name = production_db
+    """.strip()
+    with open(filename, 'w') as f:
+        f.write(content)
 
 # Basic usage
+filename = "example.ini"
+create_example_file(filename)
+
 versioning = FileVersioning()
-version_path = versioning.create_version(TEST_FILE)
+version_path, removed, error = versioning.create_version(filename)
+if error:
+    print(f"Warning: {error}")
+print(version_path)
 
 # Advanced configuration
 config = FileVersioningConfig(
-    versioned_path="backups",
-    compression=CompressionType.GZIP,
-    max_count=5  # Keep only last 5 versions
+    versions_path="backups",     # Store versions in 'backups' directory
+    compression="gz",            # Use gzip compression
+    max_versions=5,             # Keep only last 5 versions
+    use_utc=True,              # Use UTC timestamps
+    use_modified_time=True,    # Use file's modified time
+    delimiter="__"             # Custom delimiter for version files
 )
 versioning = FileVersioning(config)
-version_path = versioning.create_version(TEST_FILE)
+version_path, removed, error = versioning.create_version(filename)
+if error:
+    print(f"Warning: {error}")
+print(version_path)
 ```
 
 ## Configuration Options
 
 ### FileVersioningConfig Parameters
 
-| Parameter | Type | Default    | Description |
-|-----------|------|------------|-------------|
-| delimiter | str | "--"       | Separator between filename and version information |
-| timezone_format | TimezoneFormat | LOCAL      | Timestamp timezone (LOCAL or UTC) |
-| versioned_path | str | "versions" | Directory to store versions |
-| compression | CompressionType | NONE       | Compression type (NONE, GZIP, BZ2, XZ) |
-| max_count | Optional[int] | None       | Maximum number of versions to keep |
-| timestamp_format | TimestampSource | MODIFIED   | Source for timestamps (MODIFIED or NOW) |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| delimiter | str | "--" | Separator between filename and version information |
+| use_utc | bool | False | Use UTC timestamps instead of local time |
+| versions_path | str | "versions" | Directory to store versions |
+| compression | str | "none" | Compression type: "none", "gz", "bz2", "xz" |
+| max_versions | Optional[int] | None | Maximum number of versions to keep |
+| use_modified_time | bool | True | Use file's modified time instead of current time |
 
 ### Command Line Options
 
 ```
-usage: pyfileversioning [-h] [-V] [-t TARGET] [-d VERSIONS_DIR]
-                [-c {none,gz,bz2,xz}] [-m MAX_VERSIONS]
-                [--timestamp-source {modified,now}]
-                {create,restore,list,remove} file
+usage: pyfileversioning [-h] [-V] [-t TARGET] [-d VERSIONS_PATH]
+                        [-c {none,gz,bz2,xz}] [-m MAX_VERSIONS] [-s {mod,sto}]
+                        [-u] [-D DELIMITER]
+                        [{create,restore,list,remove}] files [files ...]
 ```
 
 Options:
 * `-V, --version`: Show version information
-* `-t, --target`: Target path for restore
-* `-d, --versions-dir`: Directory to store versions (default: versions)
-* `-c, --compression`: Compression type to use (choices: none, gz, bz2, xz)
+* `-t, --target`: Target file path for restore operation (must be full path to the restored file)
+* `-d, --versions-path`: Directory to store versions (default: versions)
+* `-c, --compression`: Compression type to use (none, gz, bz2, xz)
 * `-m, --max-versions`: Maximum number of versions to keep
-* `--timestamp-source`: Source for timestamps (choices: modified, now)
+* `-s, --src`: Source for timestamps (mod: file modified time, sto: current time)
+* `-u, --utc`: Use UTC timezone for timestamps (default: local time)
+* `--delimiter DELIMITER`: The delimiter to use (default: --)
+
+Environment Variables:
+* `PFV_VERSIONS_PATH`: Override default versions directory
+* `PFV_COMPRESSION`: Override default compression type
+* `PFV_DELIMITER`: Override default delimiter
+
+Notes:
+* The tool supports file patterns (e.g., `*.txt`, `config*.ini`)
+* Multiple files can be specified for batch operations
 
 ## Examples
 
@@ -224,53 +229,70 @@ Options:
 ```python
 from py_file_versioning import FileVersioning, FileVersioningConfig
 
-config = FileVersioningConfig(
-    versioned_path="versions",
-    max_count=5  # Keep only last 5 versions
-)
-versioning = FileVersioning(config)
+# Create versions with different timezone and timestamp combinations
+configs = [
+    # Local timezone versions
+    {"use_utc": False, "use_modified_time": True, "desc": "local timezone, modified time"},
+    {"use_utc": False, "use_modified_time": False, "desc": "local timezone, current time"},
 
-# Create versions
-for i in range(10):
-    with open("test.txt", "w") as f:
-        f.write(f"Version {i+1}\n")
-    versioning.create_version("test.txt")
+    # UTC timezone versions
+    {"use_utc": True, "use_modified_time": True, "desc": "UTC timezone, modified time"},
+    {"use_utc": True, "use_modified_time": False, "desc": "UTC timezone, current time"}
+]
+
+for cfg in configs:
+    config = FileVersioningConfig(
+        use_utc=cfg["use_utc"],
+        use_modified_time=cfg["use_modified_time"]
+    )
+    versioning = FileVersioning(config)
+    version_path, removed, error = versioning.create_version("example.ini")
+    print(version_path)
 ```
 
 ### Using Different Compression Types
 
 ```python
-from py_file_versioning import FileVersioning, FileVersioningConfig, CompressionType
+from py_file_versioning import FileVersioning, FileVersioningConfig
 
-# Create versions with different compression types
-for compression in [CompressionType.NONE, CompressionType.GZIP, CompressionType.BZ2, CompressionType.XZ]:
+# Create versions using each compression type
+compression_types = ["gz", "bz2", "xz"]
+
+for compression in compression_types:
     config = FileVersioningConfig(
-        versioned_path="versions",
-        compression=compression
+        compression=compression,
+        use_utc=True,          # Use UTC time
+        use_modified_time=True # Use file's modified time
     )
     versioning = FileVersioning(config)
-    version_path = versioning.create_version("myfile.txt")
+    version_path, removed, error = versioning.create_version("example.ini")
+    print(version_path)
 ```
 
 ### Version File Naming
 
 Version files follow this naming pattern:
 ```
-{original_name}{delimiter}{timestamp}_{sequence}{extension}[.compression_ext]
+{original_name}{delimiter}{timestamp}_{sequence}{delimiter}{version_spec}{extension}[.compression_ext]
 ```
 
 Example:
 ```
-myfile--20240120.123456_001.txt.gz
+myfile--20240120.123456_001--utc_mod.txt.gz
 ```
 
 Where:
 - `myfile` is the original filename
-- `--` is the delimiter
+- `--` is the delimiter (configurable)
 - `20240120.123456` is the timestamp (YYYYMMDD.HHMMSS)
 - `001` is the sequence number
+- `utc_mod` is the version specification:
+  - First part (`utc` or `loc`) indicates timezone (UTC or local)
+  - Second part (`mod` or `sto`) indicates timestamp source (modified time or stored/current time)
 - `.txt` is the original extension
 - `.gz` is the compression extension (if compression is used)
+
+Note: All versions of a file must use consistent timezone and timestamp source settings.
 
 ## Development
 

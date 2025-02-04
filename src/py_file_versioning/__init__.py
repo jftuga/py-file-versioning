@@ -1,25 +1,9 @@
-"""File versioning package with compression support."""
+"""File versioning system with compression support."""
 
-from .file_versioning import (
-    CompressionType,
-    FileVersioning,
-    FileVersioningConfig,
-    TimestampSource,
-    TimezoneFormat,
-    VersionError,
-    VersionInfo,
-)
+from .versioning import FileVersioning, FileVersioningConfig
 
-__version__ = "0.9.1"
-__all__ = [
-    "FileVersioning",
-    "FileVersioningConfig",
-    "CompressionType",
-    "TimestampSource",
-    "TimezoneFormat",
-    "VersionError",
-    "VersionInfo",
-]
+__version__ = "0.10.0"
+__all__ = ["FileVersioning", "FileVersioningConfig"]
 
 FileVersioning.LIB_NAME = "py-file-versioning"
 FileVersioning.LIB_URL = "https://github.com/jftuga/py-file-versioning"
