@@ -2,6 +2,8 @@
 
 A flexible file versioning system with compression support, written in Python.
 
+**NOTE: The cli tool and API are still under development and will not be stable until v1.0.0 is released**
+
 ## Table of Contents
 
 - [Features](#features)
