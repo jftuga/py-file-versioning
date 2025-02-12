@@ -34,7 +34,9 @@ classifiers = [
     "Topic :: System :: Systems Administration",
     "Topic :: Utilities",
 ]
-dependencies = []
+dependencies = [
+    "texttable>=1.7.0",
+]
 
 [project.optional-dependencies]
 dev = [
